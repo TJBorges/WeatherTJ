@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Weather TJ</string>
+
+    <string name="title_search">Pesquisa</string>
+    <string name="title_favorites">Favoritos</string>
+    <string name="title_settings">Config.</string>
+
+    <string name="tvTemperature">Temperatura</string>
+    <string name="tvLanguage">Idioma</string>
+
+    <string name="rbPortugues">Português (PT)</string>
+    <string name="rbEnglish">English (EN)</string>
+
+    <string name="btnSave">Salvar</string>
+    <string name="btnSearch">Pesquisar</string>
+    <string name="toastConectiveFail">"Falha na Conexão"</string>
+</resources>
