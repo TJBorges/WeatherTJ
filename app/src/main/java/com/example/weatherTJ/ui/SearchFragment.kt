@@ -1,6 +1,7 @@
 package com.example.weatherTJ.ui
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -9,6 +10,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
@@ -16,8 +18,10 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.weatherTJ.MyAdapter
 import com.example.weatherTJ.R
+import com.example.weatherTJ.dataBase.WeatherTJDataBase
 import com.example.weatherTJ.manager.OpenWeatherManager
 import com.example.weatherTJ.model.City
+import com.example.weatherTJ.model.CityDataBase
 import com.example.weatherTJ.model.Element
 import com.example.weatherTJ.model.Root
 import kotlinx.android.synthetic.main.fragment_search.*
@@ -26,13 +30,14 @@ import retrofit2.Callback
 import retrofit2.Response
 
 
-class SearchFragment : Fragment() {
+class SearchFragment : Fragment(), View.OnClickListener {
 
 
     override fun onCreateView(
             inflater: LayoutInflater,
             container: ViewGroup?,
-            savedInstanceState: Bundle?): View? {
+            savedInstanceState: Bundle?,
+    ): View? {
 
         val searchContainer = inflater.inflate(R.layout.fragment_search, container, false)
 
@@ -51,9 +56,14 @@ class SearchFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         recyclerView.adapter = MyAdapter(mutableListOf())
 
+        fabFavorite.setOnClickListener(this)
+
     }
 
     private fun clickSearch() {
+
+        activity?.let { closeKeyboard(it) }
+
         if(txtSearch.text.toString().trim().isEmpty()) {
             Toast.makeText(this.requireContext(), "Cidade Invalida", Toast.LENGTH_SHORT).show()
         }
@@ -77,7 +87,7 @@ class SearchFragment : Fragment() {
                                     val root = response.body()
                                     val elements = mutableListOf<Element>()
 
-                                    if(root?.list?.size!! > 0) {
+                                    if (root?.list?.size!! > 0) {
 
                                         root?.list?.forEach {
                                             elements.add(it)
@@ -88,8 +98,7 @@ class SearchFragment : Fragment() {
                                         recyclerView.addItemDecoration(MyAdapter.MyItemDecoration(30))
 
                                         pbSearch.visibility = View.GONE
-                                    }
-                                    else{
+                                    } else {
                                         Toast.makeText(context, "Cidade nao encontrada", Toast.LENGTH_SHORT).show()
                                         pbSearch.visibility = View.GONE
                                     }
@@ -127,6 +136,51 @@ class SearchFragment : Fragment() {
         return result
     }
 
+    fun closeKeyboard(activity: Activity) {
+        val imm: InputMethodManager = activity.getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
+        var view = activity.currentFocus
+
+        if (view == null) {
+            view = View(activity)
+        }
+        imm.hideSoftInputFromWindow(view.windowToken, 0)
+    }
+
+    override fun onClick(v: View?) {
+        val city = txtSearch.text.toString()
+        val service = OpenWeatherManager().getOpenWeatherService()
+
+        val call = service.getCityWeather(city)
+
+        call.enqueue(object : Callback<City> {
+            override fun onResponse(call: Call<City>, response: Response<City>) {
+                when(response.isSuccessful){
+                    true -> {
+                        val city = response.body()
+                        val db = context?.applicationContext.let { it?.let { it1 ->
+                            WeatherTJDataBase.getInstance(it1)
+                        } }
+
+                        val cityDataBase = CityDataBase(city!!.id, city!!.name)
+
+
+                        db?.cityDataBaseDao()?.save(cityDataBase)
+
+                        Toast.makeText(context, "Salvou", Toast.LENGTH_SHORT).show()
+
+                    }
+                    false -> {
+                        Toast.makeText(context, "Selecione uma Cidade", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+
+            override fun onFailure(call: Call<City>, t: Throwable) {
+                Toast.makeText(context, "Faiou2", Toast.LENGTH_SHORT).show()
+            }
+
+        })
+    }
 
 
 }

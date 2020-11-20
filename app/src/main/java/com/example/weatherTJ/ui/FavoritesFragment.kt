@@ -6,7 +6,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.weatherTJ.FavoriteAdapter
 import com.example.weatherTJ.R
+import com.example.weatherTJ.dataBase.WeatherTJDataBase
+import kotlinx.android.synthetic.main.favorite_item.*
+import kotlinx.android.synthetic.main.fragment_favorites.*
+import kotlinx.android.synthetic.main.fragment_search.*
 
 class FavoritesFragment : Fragment() {
 
@@ -19,10 +25,20 @@ class FavoritesFragment : Fragment() {
         val favoritesContainer =
             inflater.inflate(R.layout.fragment_favorites, container, false)
 
-        val textView = favoritesContainer.findViewById<TextView>(R.id.text_favorites)
-
-        textView.text = getString(R.string.title_favorites)
-
         return favoritesContainer
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        val db = context?.let { WeatherTJDataBase.getInstance(it) }
+
+        val list = db?.cityDataBaseDao()?.getAllCityDataBase()
+
+        rvFavorite.adapter = FavoriteAdapter(list)
+        rvFavorite.layoutManager = LinearLayoutManager(context)
+        rvFavorite.addItemDecoration(FavoriteAdapter.itemDecoration(25))
+
+
     }
 }
